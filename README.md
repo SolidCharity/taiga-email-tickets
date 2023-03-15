@@ -9,8 +9,18 @@ Your clients send their requests to a specified mailbox.
 This script will collect the emails and add them as a ticket to specified projects.
 
 
+License
+-------
+
+This script is licensed under the BSD 3-Clause License.
+
 Setup
 -----
+
+First clone this repository:
+
+    git clone https://github.com/SolidCharity/taiga-email-tickets.git
+    cd taiga-email-tickets
 
 You must copy the `.env.sample` file, and call it `.env`.
 
