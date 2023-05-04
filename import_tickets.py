@@ -10,6 +10,7 @@ import taiga
 import imaplib
 import email
 import re
+import uuid
 from email.header import decode_header
 from taiga import TaigaAPI
 
@@ -123,6 +124,8 @@ def create_tickets(messages):
 
 
 def decode_email(msg, tag):
+    if not msg[tag]:
+        return None
     val, encoding = decode_header(msg[tag])[0]
     if isinstance(val, bytes):
         # if it's a bytes, decode to str
@@ -155,6 +158,9 @@ def collect_emails():
             post['date'] = decode_email(msg, "Date")
             post['message_id'] = decode_email(msg, "Message-ID")
             post['msg'] = msg
+
+            if not post['message_id']:
+                post['message_id'] = str(uuid.uuid4())
 
             post['text'] = ""
             post['html'] = ""
