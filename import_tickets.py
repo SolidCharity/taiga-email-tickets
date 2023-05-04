@@ -91,7 +91,8 @@ def create_ticket(api, project_slug, message):
             project.issue_statuses.get(name='New').id,
             project.issue_types.get(name='Bug').id,
             project.severities.get(name='Minor').id,
-            description=body
+            description=body,
+            assigned_to=env('TAIGA_ASSIGN_TO'),
         )
 
     # attach the original message, as .eml file to be opened in eg. Thunderbird
