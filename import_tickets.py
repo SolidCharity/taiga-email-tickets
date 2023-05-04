@@ -98,13 +98,21 @@ def create_ticket(api, project_slug, message):
     path = os.path.join(BASE_DIR, message['message_id'])
     os.makedirs(path)
 
-    attach_file(path, newissue, 'message.eml', str(message['msg']), description='The original mail message')
+    try:
+        attach_file(path, newissue, 'message.eml', str(message['msg']), description='The original mail message')
 
-    # attach attachments
-    for att in message['attachments']:
-        attach_file(path, newissue, att['filename'], att['content'], description="Attachment")
+        # attach attachments
+        for att in message['attachments']:
+            attach_file(path, newissue, att['filename'], att['content'], description="Attachment")
+    except taiga.exceptions.TaigaRestException as ex:
+        print(f"while uploading attachments into project {project_slug}: ")
+        print(message['from'])
+        print(message['to'])
+        print(ex)
+        return False
 
-    shutil.rmtree(path)
+    finally:
+        shutil.rmtree(path)
     
     imap.store(message["e_id"], '+FLAGS', '\Seen')
 
