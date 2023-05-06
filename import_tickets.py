@@ -11,6 +11,7 @@ import imaplib
 import email
 import re
 import uuid
+import traceback
 from email.header import decode_header
 from taiga import TaigaAPI
 
@@ -136,6 +137,8 @@ def decode_email(msg, tag):
     if not msg[tag]:
         return None
     val, encoding = decode_header(msg[tag])[0]
+    if encoding is None:
+        encoding = "utf-8"
     if isinstance(val, bytes):
         # if it's a bytes, decode to str
         val = val.decode(encoding)
@@ -155,7 +158,7 @@ def collect_emails():
       res, msg = imap.fetch(e_id, "(BODY.PEEK[])")
       for response in msg:
         if isinstance(response, tuple):
-
+          try:
             # parse a bytes email into a message object
             msg = email.message_from_bytes(response[1])
 
@@ -202,6 +205,12 @@ def collect_emails():
                     post['html'] = body
 
             messages.append(post)
+          except Exception as ex:
+            # TODO send error notification?
+            print(post['to'])
+            print(ex)
+            traceback.print_exc()
+
 
     return messages
 
