@@ -12,6 +12,8 @@ import imaplib
 import email
 import re
 import uuid
+import smtplib
+from email.message import EmailMessage
 import traceback
 from email.header import decode_header
 from taiga import TaigaAPI
@@ -38,6 +40,24 @@ imap.login(env('IMAP_USER'), env('IMAP_PWD'))
 def camel_case_to_slug(name):
     slug = re.sub('(?!^)([A-Z]+)', r'-\1',name).lower()
     return slug
+
+
+def send_notification_email(to, message):
+
+    # send error notification per smtp
+    msg = EmailMessage()
+    msg['Subject'] = 'Error taiga email tickets'
+    msg['From'] = 'no-reply@' + env('IMAP_HOST')
+    msg['To'] = to
+    msg.set_content(message)
+    server = smtplib.SMTP(env('IMAP_HOST'), 25)
+    server.connect(env('IMAP_HOST'), 587)
+    server.ehlo()
+    server.starttls()
+    server.ehlo()
+    server.login(env('IMAP_USER'), env('IMAP_PWD'))
+    server.send_message(msg)
+    server.quit()
 
 
 def attach_file(path, issue, filename, content, description):
@@ -238,11 +258,13 @@ def collect_emails():
 
             messages.append(post)
           except Exception as ex:
-            # TODO send error notification?
             print(post['to'])
             print(ex)
             traceback.print_exc()
 
+            send_notification_email(
+                    to = env('NOTIFICATION_ADDRESS'),
+                    message = f"{post}\n\n{ex}\n\n")
 
     return messages
 
@@ -250,4 +272,3 @@ def collect_emails():
 messages = collect_emails()
 create_tickets(messages)
 clean_seen_emails(days=env('IMAP_DELETE_SEEN_AFTER_DAYS'))
-
