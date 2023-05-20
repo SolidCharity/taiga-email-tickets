@@ -5,6 +5,7 @@ and add the email as a new ticket in Taiga.
 
 import os
 import shutil
+import datetime
 import environ
 import taiga
 import imaplib
@@ -144,6 +145,37 @@ def decode_email(msg, tag):
         val = val.decode(encoding)
     return val
 
+
+def clean_seen_emails(days):
+    if not days:
+        return
+
+    monthListRfc2822 = ['0', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    beforeDate = datetime.datetime.today() - datetime.timedelta(days = int(days))
+    # print(beforeDate)
+    filterInbox = ("(BEFORE %s-%s-%s SEEN)"
+                    % (beforeDate.strftime('%d'),
+                       monthListRfc2822[beforeDate.month],
+                       beforeDate.strftime('%Y')))
+    imap.select("INBOX")
+
+    status, responseSearch = imap.search(None, filterInbox)
+    old_messages = responseSearch[0].split()
+    for e_id in old_messages:
+        res, msg = imap.fetch(e_id, "(BODY.PEEK[])")
+        for detail in msg:
+          if isinstance(detail, tuple):
+            # parse a bytes email into a message object
+            # msg = email.message_from_bytes(detail[1])
+            # print(e_id)
+            # print(decode_email(msg, "Date") + "     " + decode_email(msg, "Subject"))
+            status, responseDeleted = imap.store(e_id, '+FLAGS', '\Deleted')
+
+    # Really delete the messages that are marked Deleted.
+    status, response = imap.expunge()
+
+
 def collect_emails():
     # get all new messages
     messages = []
@@ -217,5 +249,5 @@ def collect_emails():
 
 messages = collect_emails()
 create_tickets(messages)
-
+clean_seen_emails(days=env('IMAP_DELETE_SEEN_AFTER_DAYS'))
 
